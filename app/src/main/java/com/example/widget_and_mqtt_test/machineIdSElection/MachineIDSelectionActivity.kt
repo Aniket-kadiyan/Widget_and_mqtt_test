@@ -1,6 +1,7 @@
 package com.example.widget_and_mqtt_test.machineIdSElection
 
 import android.content.Intent
+import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -20,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.widget_and_mqtt_test.R
 import com.example.widget_and_mqtt_test.databinding.ActivityMachineIdSelectionBinding
 import com.example.widget_and_mqtt_test.linestatuslist
+import com.example.widget_and_mqtt_test.maintenanceInfoScreen.MachineMaintenanceListAdapter
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.mlkit.vision.barcode.common.Barcode
@@ -28,14 +30,15 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import org.json.JSONArray
 import org.json.JSONObject
 
-class MachineIDSelectionActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
+class MachineIDSelectionActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener,
+    SharedPreferences.OnSharedPreferenceChangeListener {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMachineIdSelectionBinding
     lateinit var linestatusarray: JSONArray
-    lateinit var selectMachineButton : Button
+    lateinit var selectMachineButton: Button
     lateinit var lineSelectionViewModel: LineSelectionViewModel
-
+    lateinit var sharedPreferences : SharedPreferences
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -43,10 +46,11 @@ class MachineIDSelectionActivity : AppCompatActivity(), AdapterView.OnItemSelect
         setContentView(binding.root)
         lineSelectionViewModel = ViewModelProvider(this).get(LineSelectionViewModel::class.java)
 
-        var sharedPreferences = getSharedPreferences("FS", MODE_PRIVATE)
+        sharedPreferences = getSharedPreferences("FS", MODE_PRIVATE)
+        sharedPreferences.registerOnSharedPreferenceChangeListener(this)
         var myEdit = sharedPreferences.edit()
         var flag = sharedPreferences.contains("linestatusarray")
-
+        Log.d("shared preference data", sharedPreferences.all.toString())
         binding.apply {
 
             Log.d("spinner debug", "chk 31")
@@ -80,26 +84,35 @@ class MachineIDSelectionActivity : AppCompatActivity(), AdapterView.OnItemSelect
                 val machinelistSpinner = modalView.findViewById<Spinner>(R.id.machineListSpinner)
                 val machinenamelist = listOf<String>(
                     "<Select a machine>",
-                    "MACHINE 1",
-                    "MACHINE 2",
-                    "MACHINE 3",
-                    "MACHINE 4",
-                    "MACHINE 5",
-                    "MACHINE 6",
-                    "MACHINE 7",
-                    "MACHINE 8",
-                    "MACHINE 9",
-                    "MACHINE 10"
+                    "Terminal pressing",
+                    "Oil seal pressing",
+                    "Ball Bearing pressing",
+                    "Carbon Brush tightening (-)ve",
+                    "Carbon Brush tightening (+)ve",
+                    "Brush spring insertion(+,-)",
+                    "Yoke unit tightening",
+                    "Lead wire tightening",
+                    "Earth wire tightening",
+                    "Characteristic checking",
+                    "No load checking",
+                    "Leakage testing",
+                    "Laser Prinitng",
+                    "Lot no. Punching",
+                    "Visual inspection",
                 )
-                var arrayadapter = ArrayAdapter<String>(this@MachineIDSelectionActivity, R.layout.spinner_item_layout, machinenamelist)
-                machinelistSpinner.adapter=arrayadapter
+                var arrayadapter = ArrayAdapter<String>(
+                    this@MachineIDSelectionActivity,
+                    R.layout.spinner_item_layout,
+                    machinenamelist
+                )
+                machinelistSpinner.adapter = arrayadapter
                 Log.d("spinner debug", "chk 2")
-                machinelistSpinner.onItemSelectedListener=this@MachineIDSelectionActivity
+                machinelistSpinner.onItemSelectedListener = this@MachineIDSelectionActivity
                 var adapter1 =
                     MachineSelectionModalListAdapter(machinenamelist, lineSelectionViewModel)
 //                machineListRV.adapter = adapter1
                 Log.d("spinner debug", "chk 3")
-                selectMachineButton.isEnabled=false
+                selectMachineButton.isEnabled = false
 
                 selectMachineButton.setOnClickListener {
                     var selectedmachinename = lineSelectionViewModel.getCurrentSelectedMachine()
@@ -117,10 +130,10 @@ class MachineIDSelectionActivity : AppCompatActivity(), AdapterView.OnItemSelect
                     linestatus.add(index, selectedline)
                     adapter = IdSelectionListAdapter(linestatus, lineSelectionViewModel)
                     machineSelectionRV.adapter = adapter
-                    if(sharedPreferences.contains("linestatusarray")){
+                    if (sharedPreferences.contains("linestatusarray")) {
                         myEdit.remove("linestatusarray").apply()
                     }
-                    myEdit.putString("linestatusarray",linestatus.toString())
+                    myEdit.putString("linestatusarray", linestatus.toString()).apply()
                     //
                     //add machine name to shared preferences
                     //
@@ -129,15 +142,18 @@ class MachineIDSelectionActivity : AppCompatActivity(), AdapterView.OnItemSelect
                     machineinfo.put("line", selectedline.getString("line"))
                     machineinfo.put("machine", selectedmachinename)
                     Log.d("machine info", machineinfo.toString())
-                    if(sharedPreferences.contains("machinestatusarray")){
-                        var tempmachinestatuslist = JSONArray(sharedPreferences.getString("machinestatusarray",""))
+                    if (sharedPreferences.contains("machinestatusarray")) {
+                        var tempmachinestatuslist =
+                            JSONArray(sharedPreferences.getString("machinestatusarray", ""))
                         tempmachinestatuslist.put(machineinfo)
                         myEdit.remove("machinestatusarray").apply()
-                        myEdit.putString("machinestatusarray",tempmachinestatuslist.toString()).apply()
+                        myEdit.putString("machinestatusarray", tempmachinestatuslist.toString())
+                            .apply()
+                    } else {
+                        myEdit.putString("addmachineienfo", machineinfo.toString()).apply()
                     }
-                    else{
-                        myEdit.putString("addmachineienfo",machineinfo.toString())
-                    }
+                    machineinfo.put("type",1)
+                    myEdit.putString("publish",machineinfo.toString()).apply()
                     dialog.dismiss()
                 }
 
@@ -159,35 +175,48 @@ class MachineIDSelectionActivity : AppCompatActivity(), AdapterView.OnItemSelect
                                 JSONObject("{\"line\":\"line5\",\"machine\":\"machine3\",\"status\":\"sent for maintenance\",\"assigned to\":\"\",\"reason\":\"\"}")
                             machineinfo.put("line", selectedline.getString("line"))
                             machineinfo.put("machine", jobj.getString("machine name"))
-                            if(sharedPreferences.contains("machinestatusarray")){
-                                var tempmachinestatuslist = JSONArray(sharedPreferences.getString("machinestatusarray",""))
+                            if (sharedPreferences.contains("machinestatusarray")) {
+                                var tempmachinestatuslist =
+                                    JSONArray(sharedPreferences.getString("machinestatusarray", ""))
                                 tempmachinestatuslist.put(machineinfo)
                                 myEdit.remove("machinestatusarray").apply()
-                                myEdit.putString("machinestatusarray",tempmachinestatuslist.toString()).apply()
+                                myEdit.putString(
+                                    "machinestatusarray",
+                                    tempmachinestatuslist.toString()
+                                ).apply()
+                            } else {
+                                myEdit.putString("addmachineienfo", machineinfo.toString()).apply()
                             }
-                            else{
-                                myEdit.putString("addmachineienfo",machineinfo.toString())
-                            }
-
+                            machineinfo.put("type",1)
+                            myEdit.putString("publish",machineinfo.toString()).apply()
                             var index = -1
                             for (item in linestatus) {
                                 if (item.getString("line") == machineinfo.getString("line"))
                                     index = linestatus.indexOf(item)
                             }
                             var templine = linestatus.get(index)
-                            templine.put("status","IN MAINTENANCE")
+                            templine.put("status", "IN MAINTENANCE")
                             linestatus.remove(linestatus.get(index))
 //                    linestatus.add(selectedline)
                             linestatus.add(index, templine)
                             adapter = IdSelectionListAdapter(linestatus, lineSelectionViewModel)
                             machineSelectionRV.adapter = adapter
-                            if(sharedPreferences.contains("linestatusarray")){
+                            if (sharedPreferences.contains("linestatusarray")) {
                                 myEdit.remove("linestatusarray").apply()
                             }
-                            myEdit.putString("linestatusarray",linestatus.toString())
+                            myEdit.putString("linestatusarray", linestatus.toString()).apply()
+                            templine.put("type",0)
+                            myEdit.putString("publish",templine.toString()).apply()
+                            myEdit.putString("publishtoService",linestatus.toString()).apply()
 
                             dialog.dismiss()
-                            Toast.makeText(this@MachineIDSelectionActivity,"SENT MAINTENANCE REQUEST FOR:\n"+jobj.getString("line").uppercase()+"\n"+jobj.getString("machine name").uppercase(), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                this@MachineIDSelectionActivity,
+                                "SENT MAINTENANCE REQUEST FOR:\n" + jobj.getString("line")
+                                    .uppercase() + "\n" + jobj.getString("machine name")
+                                    .uppercase(),
+                                Toast.LENGTH_SHORT
+                            ).show()
 
 
                             if (it.valueType == Barcode.TYPE_URL) {
@@ -211,19 +240,63 @@ class MachineIDSelectionActivity : AppCompatActivity(), AdapterView.OnItemSelect
     }
 
     override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
-        Log.d("spinner", p0!!.getItemAtPosition(p2).toString()+"\n"+p2)
+        Log.d("spinner", p0!!.getItemAtPosition(p2).toString() + "\n" + p2)
         var item = p0!!.getItemAtPosition(p2).toString()
-        if(item!="<Select a machine>"){
+        if (item != "<Select a machine>") {
             lineSelectionViewModel.setSelectedMachine(item)
-            selectMachineButton.isEnabled=true
-        }
-        else{
-            selectMachineButton.isEnabled=false
+            selectMachineButton.isEnabled = true
+        } else {
+            selectMachineButton.isEnabled = false
         }
     }
 
     override fun onNothingSelected(p0: AdapterView<*>?) {
-        selectMachineButton.isEnabled=false
+        selectMachineButton.isEnabled = false
+    }
+
+    override fun onSharedPreferenceChanged(p0: SharedPreferences?, p1: String?) {
+        Log.d("updated pref.", p1!!)
+        if(p1=="linestatusarray"){
+            Log.d("linestatusarray", "onSharedPreferenceChanged: "+sharedPreferences.getString("linestatusarray", "..-"))
+            if(sharedPreferences.getString("linestatusarray", "..-")!="..-") {
+                linestatusarray=JSONArray(sharedPreferences.getString("linestatusarray", "..-"))
+                var linestatus: ArrayList<JSONObject> = arrayListOf()
+                for (i in 0..linestatusarray.length() - 1) {
+                    Log.d("json", linestatusarray.getString(i))
+                    linestatus.add(linestatusarray.getJSONObject(i))
+                }
+                Log.d("adapter data", linestatus.toString())
+                var adapter = IdSelectionListAdapter(linestatus, lineSelectionViewModel)
+                binding.machineSelectionRV.adapter = adapter
+            }
+        }
+        else if(p1=="lineupdate"){
+            var tmpstatusarray = JSONArray(sharedPreferences.getString("linestatusarray",""))
+            var lineobj = JSONObject(sharedPreferences.getString("lineupdate",""))
+            var linestatus = ArrayList<JSONObject>()
+            for(i in 0..tmpstatusarray.length()-1){
+                linestatus.add(tmpstatusarray.getJSONObject(i))
+            }
+            var index=-1
+            for(item in linestatus){
+                if((lineobj.getString("line")==item.getString("line"))){
+                    index=linestatus.indexOf(item)
+                    Log.d("line update::: ", "\nselected index= "+index)
+                    break
+                }
+            }
+
+            Log.d("line update::: ", "deleting index= "+index+"\nbefore deleteion = "+linestatus.toString())
+            if(index!=-1) {
+                linestatus.remove(linestatus.get(index))
+                linestatus.add(index, lineobj)
+            }
+            Log.d("line update::: ", "after deleteion = "+tmpstatusarray.toString())
+            var adapter = IdSelectionListAdapter(linestatus, lineSelectionViewModel)
+            binding.machineSelectionRV.adapter = adapter
+            var myedit = sharedPreferences.edit()
+            myedit.putString("linestatusarray",linestatus.toString()).apply()
+        }
     }
 
 

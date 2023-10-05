@@ -1,6 +1,7 @@
 package com.example.widget_and_mqtt_test
 
 import org.json.JSONArray
+import org.json.JSONObject
 
 val userlist = JSONArray(
     "[" +
@@ -12,18 +13,21 @@ val userlist = JSONArray(
 
 val machinestatuslist = JSONArray(
     "[" +
-            "{\"line\":\"LINE 5\",\"machine\":\"MACHINE 3\",\"status\":\"assigned for maintenance\",\"assigned to\":\"engineer 1\",\"reason\":\"\"}," +
-            "{\"line\":\"LINE 3\",\"machine\":\"MACHINE 6\",\"status\":\"sent for maintenance\",\"assigned to\":\"\",\"reason\":\"\"}," +
-            "{\"line\":\"LINE 3\",\"machine\":\"MACHINE 2\",\"status\":\"sent for maintenance\",\"assigned to\":\"\",\"reason\":\"\"}" +
+            "{\"line\":\"PDC_05\",\"machine\":\"Carbon Brush tightening (+)ve\",\"status\":\"assigned for maintenance\",\"assigned to\":\"engineer 1\",\"reason\":\"\"}," +
+            "{\"line\":\"PDC_03\",\"machine\":\"No load checking\",\"status\":\"sent for maintenance\",\"assigned to\":\"\",\"reason\":\"\"}," +
+            "{\"line\":\"PDC_03\",\"machine\":\"Visual inspection\",\"status\":\"sent for maintenance\",\"assigned to\":\"\",\"reason\":\"\"}" +
             "]"
 )
 val linestatuslist = JSONArray(
     "[" +
-            "{\"type\":0,\"line\":\"LINE 1\",\"status\":\"RUNNING\",\"department\":\"dept1\",\"breakdownstarttime\":\"\"}," +
-            "{\"type\":0,\"line\":\"LINE 2\",\"status\":\"RUNNING\",\"department\":\"dept1\",\"breakdownstarttime\":\"\"}," +
-            "{\"type\":0,\"line\":\"LINE 3\",\"status\":\"IN MAINTENANCE\",\"department\":\"dept1\",\"breakdownstarttime\":\"28-03-202314:46:00\"}," +
-            "{\"type\":0,\"line\":\"LINE 4\",\"status\":\"RUNNING\",\"department\":\"dept1\",\"breakdownstarttime\":\"\"}," +
-            "{\"type\":0,\"line\":\"LINE 5\",\"status\":\"IN MAINTENANCE\",\"department\":\"dept1\",\"breakdownstarttime\":\"28-03-202313:46:50\"}," +
-            "{\"type\":0,\"line\":\"LINE 6\",\"status\":\"DOWNTIME\",\"department\":\"dept1\",\"breakdownstarttime\":\"\"}" +
+            "{\"type\":0,\"line\":\"PDC_01\",\"status\":\"RUNNING\",\"department\":\"dept1\",\"breakdownstarttime\":\"\"}," +
+            "{\"type\":0,\"line\":\"PDC_02\",\"status\":\"RUNNING\",\"department\":\"dept1\",\"breakdownstarttime\":\"\"}," +
+            "{\"type\":0,\"line\":\"PDC_03\",\"status\":\"IN MAINTENANCE\",\"department\":\"dept1\",\"breakdownstarttime\":\"28-03-202314:46:00\"}," +
+            "{\"type\":0,\"line\":\"PDC_04\",\"status\":\"RUNNING\",\"department\":\"dept1\",\"breakdownstarttime\":\"\"}," +
+            "{\"type\":0,\"line\":\"PDC_05\",\"status\":\"IN MAINTENANCE\",\"department\":\"dept1\",\"breakdownstarttime\":\"28-03-202313:46:50\"}," +
+            "{\"type\":0,\"line\":\"PDC_06\",\"status\":\"DOWNTIME\",\"department\":\"dept1\",\"breakdownstarttime\":\"\"}" +
             "]"
 )
+
+var machine_and_reason_name = JSONObject()
+

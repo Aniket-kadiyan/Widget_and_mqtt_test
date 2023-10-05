@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.widget_and_mqtt_test.R
 import com.example.widget_and_mqtt_test.databinding.ActivityMachineIdSelectionBinding
 import com.example.widget_and_mqtt_test.databinding.MaintenanceInfoScreenLayoutBinding
+import com.example.widget_and_mqtt_test.linestatuslist
 import com.example.widget_and_mqtt_test.machinestatuslist
 import com.google.android.gms.common.moduleinstall.ModuleInstall
 import com.google.android.gms.common.moduleinstall.ModuleInstallRequest
@@ -38,7 +39,8 @@ class MaintenanceInfoScreen : AppCompatActivity(),
     lateinit var machinestatusarray: JSONArray
     lateinit var modalButton: Button
     lateinit var machineSelectionViewModel: MachineSelectionViewModel
-
+    lateinit var sharedPreferences: SharedPreferences
+    lateinit var machinestatus:ArrayList<JSONObject>
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = MaintenanceInfoScreenLayoutBinding.inflate(layoutInflater)
@@ -59,7 +61,8 @@ class MaintenanceInfoScreen : AppCompatActivity(),
                 // Handle failure…
             }
 
-        var sharedPreferences = getSharedPreferences("FS", MODE_PRIVATE)
+        sharedPreferences = getSharedPreferences("FS", MODE_PRIVATE)
+        sharedPreferences.registerOnSharedPreferenceChangeListener(this)
         var myEdit = sharedPreferences.edit()
         var flag = sharedPreferences.contains("machinestatusarray")
         Log.d("shared pref. flags", sharedPreferences.all.toString())
@@ -76,7 +79,7 @@ class MaintenanceInfoScreen : AppCompatActivity(),
                 Log.d("from pre stored", machinestatusarray.toString())
             }
 
-            var machinestatus: ArrayList<JSONObject> = arrayListOf()
+             machinestatus = arrayListOf()
             for (i in 0..machinestatusarray.length() - 1) {
 //                Log.d("json", machinestatusarray.getString(i))
                 machinestatus.add(machinestatusarray.getJSONObject(i))
@@ -112,7 +115,7 @@ class MaintenanceInfoScreen : AppCompatActivity(),
                 reasonnamelist
             )
             modalspinner.adapter = arrayadapter
-            modalspinner.onItemSelectedListener=this@MaintenanceInfoScreen
+            modalspinner.onItemSelectedListener = this@MaintenanceInfoScreen
             var adapter1 =
                 MaintenanceInfoBottomSheetAdapter(reasonnamelist, machineSelectionViewModel)
 //            modalReasonList.adapter = adapter1
@@ -169,10 +172,14 @@ class MaintenanceInfoScreen : AppCompatActivity(),
 
                                 myEdit.putString("machinestatusarray", machinestatus.toString())
                                     .apply()
+                                machineinfo.put("type", 1)
+                                myEdit.putString("publish", machineinfo.toString()).apply()
                             } else if (itemstatus == "assigned for maintenance") {
                                 machineinfo.put("status", itemstatus)
                                 machineinfo.put("assigned to", " Engineer 1")
                                 machineSelectionViewModel.setSelectedMachine(machineinfo)
+                                machineinfo.put("type", 1)
+                                myEdit.putString("publish", machineinfo.toString()).apply()
                                 dialog.show()
                             }
 
@@ -226,6 +233,12 @@ class MaintenanceInfoScreen : AppCompatActivity(),
                                 ) {
                                     index = machinestatus.indexOf(item)
                                 }
+                                Log.d(
+                                    "scan comparision",
+                                    item.getString("line") + "\n" + jobj.getString("line") + "\n" + item.getString(
+                                        "machine"
+                                    ) + "\n" + jobj.getString("machine name")
+                                )
                             }
                             machinestatus.remove(machinestatus.get(index))
                             machinestatus.add(index, machineinfo)
@@ -242,7 +255,8 @@ class MaintenanceInfoScreen : AppCompatActivity(),
                             }
 
                             myEdit.putString("machinestatusarray", machinestatus.toString()).apply()
-
+                            machineinfo.put("type", 1)
+                            myEdit.putString("publish", machineinfo.toString()).apply()
                             if (it.valueType == Barcode.TYPE_URL) {
                                 val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(rawValue))
                                 startActivity(browserIntent)
@@ -271,6 +285,7 @@ class MaintenanceInfoScreen : AppCompatActivity(),
                         ) {
                             index = machinestatus.indexOf(item)
                         }
+                        Log.d("maintenance comparisioan::: ", item.getString("line")+"\n"+selectedmachine.getString("line")+"\n"+item.getString("machine")+"\n"+selectedmachine.getString("machine"))
                     }
                     machinestatus.remove(machinestatus.get(index))
                     machinestatus.add(index, selectedmachine)
@@ -283,9 +298,10 @@ class MaintenanceInfoScreen : AppCompatActivity(),
                     }
 
                     myEdit.putString("machinestatusarray", machinestatus.toString()).apply()
+                    selectedmachine.put("type", 1)
+                    myEdit.putString("publish", selectedmachine.toString()).apply()
                     var linecomplete = true
-                    var templinestatus =
-                        JSONArray(sharedPreferences.getString("linestatusarray", ""))
+
                     for (item in machinestatus) {
                         if ((item.getString("line") == selectedmachine.getString("line")) && (item.getString(
                                 "machine"
@@ -295,6 +311,15 @@ class MaintenanceInfoScreen : AppCompatActivity(),
                                 linecomplete = false
                             }
                         }
+                    }
+                    var templinestatus = linestatuslist
+                    if (sharedPreferences.contains("linestatusarray") && !sharedPreferences.getString(
+                            "linestatusarra",
+                            ""
+                        ).isNullOrEmpty()
+                    ) {
+                        templinestatus =
+                            JSONArray(sharedPreferences.getString("linestatusarray", ""))
                     }
                     index = -1
                     for (i in 0..templinestatus.length() - 1) {
@@ -308,7 +333,15 @@ class MaintenanceInfoScreen : AppCompatActivity(),
                         }
                     }
                     if (linecomplete) {
-                        templinestatus.getJSONObject(index).put("status", "MAINTENANCE COMPLETE")
+                        if (index != -1) {
+                            templinestatus.getJSONObject(index)
+                                .put("status", "MAINTENANCE COMPLETE")
+                            templinestatus.getJSONObject(index).put("type", 0)
+                            myEdit.putString(
+                                "publish",
+                                templinestatus.getJSONObject(index).toString()
+                            ).apply()
+                        }
                         myEdit.remove("linestatusarray").apply()
                         myEdit.putString("linestatusarray", templinestatus.toString()).apply()
                     }
@@ -331,6 +364,23 @@ class MaintenanceInfoScreen : AppCompatActivity(),
                         "Select Downtime Reason for: " + it.getString("line") + " -- " + it.getString(
                             "machine"
                         )
+                    var tempreasonlist = JSONArray(
+                        JSONObject(
+                            sharedPreferences.getString("machinereasonmapping", "")
+                        ).getString(it.getString("machine"))
+                    )
+                    Log.d("reason listing::::", tempreasonlist.toString())
+                    var tempreasonlistarray = ArrayList<String>()
+                    for (i in 0..tempreasonlist.length() - 1) {
+                        tempreasonlistarray.add(tempreasonlist.getString(i))
+                    }
+                    var arrayadapter = ArrayAdapter<String>(
+                        this@MaintenanceInfoScreen,
+                        R.layout.spinner_item_layout,
+                        tempreasonlistarray
+                    )
+                    modalspinner.adapter = arrayadapter
+                    modalspinner.onItemSelectedListener = this@MaintenanceInfoScreen
                     modalspinner.isVisible = true
                     modalButton.text = "SUBMIT"
                 }
@@ -346,13 +396,48 @@ class MaintenanceInfoScreen : AppCompatActivity(),
             var str = p0?.getString(p1!!, "")!!
             Log.d("supervisor update", str)
         }
+        if (p1 == "machineupdate") {
+            var tmpstatusarray = JSONArray(sharedPreferences.getString("machinestatusarray", ""))
+            var machineobj = JSONObject(sharedPreferences.getString("machineupdate", ""))
+            var machinestatus = ArrayList<JSONObject>()
+            for (i in 0..tmpstatusarray.length() - 1) {
+                machinestatus.add(tmpstatusarray.getJSONObject(i))
+            }
+            var index = -1
+            for (item in machinestatus) {
+                if ((machineobj.getString("line") == item.getString("line")) && (machineobj.getString(
+                        "machine"
+                    ) == item.getString("machine"))
+                ) {
+                    index = machinestatus.indexOf(item)
+                    Log.d("machine update::: ", "\nselected index= " + index)
+                    break
+                }
+            }
+
+            Log.d(
+                "machine update::: ",
+                "deleting index= " + index + "\nbefore deleteion = " + machinestatus.toString()
+            )
+            if (index != -1) {
+                machinestatus.remove(machinestatus.get(index))
+                machinestatus.add(index, machineobj)
+            } else {
+                machinestatus.add(machineobj)
+            }
+            Log.d("machine update::: ", "after deleteion = " + tmpstatusarray.toString())
+            var adapter = MachineMaintenanceListAdapter(machinestatus, machineSelectionViewModel)
+            binding.maintenanceInfoScreenitemListRV.adapter = adapter
+            var myedit = sharedPreferences.edit()
+            myedit.putString("machinestatusarray", machinestatus.toString()).apply()
+        }
 
     }
 
     override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
         Log.d("spinner", p0!!.getItemAtPosition(p2).toString() + "\n" + p2)
 
-        var item = p0!!.getItemAtPosition(p2).toString()
+        var item = p0.getItemAtPosition(p2).toString()
         if (item != "<Select a machine>") {
             machineSelectionViewModel.setSelectedReason(item)
             modalButton.isEnabled = true
@@ -360,9 +445,9 @@ class MaintenanceInfoScreen : AppCompatActivity(),
             modalButton.isEnabled = false
         }
 
-}
+    }
 
-override fun onNothingSelected(p0: AdapterView<*>?) {
-    TODO("Not yet implemented")
-}
+    override fun onNothingSelected(p0: AdapterView<*>?) {
+        TODO("Not yet implemented")
+    }
 }
