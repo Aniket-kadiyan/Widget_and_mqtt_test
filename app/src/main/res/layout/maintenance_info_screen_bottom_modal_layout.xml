@@ -21,24 +21,44 @@
         android:id="@+id/acceptButtonmislbm"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@id/reasonlistspinner"
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="10dp"
+        android:layout_marginBottom="10dp"
+        android:padding="5dp"
+        android:text="Accept"
+        android:textSize="20dp" />
+
+    <Spinner
+        android:id="@+id/reasonlistspinner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_below="@id/reasonListRV"
         android:layout_centerHorizontal="true"
-        android:layout_margin="10dp"
-        android:layout_marginBottom="50dp"
+        android:gravity="center"
+        android:elevation="3dp"
+        android:minHeight="50dp"
+        android:layout_margin="5dp"
         android:padding="5dp"
-        android:textSize="20dp"
-        android:text="Accept" />
+        />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/reasonListRV"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:foregroundGravity="center"
-        android:layout_centerHorizontal="true"
         android:layout_below="@id/staticTVmislbm"
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginEnd="5dp"
+        android:layout_marginBottom="5dp"
+        android:foregroundGravity="center"
         android:orientation="horizontal"
         android:padding="5dp"
+        android:visibility="invisible"
         app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-        app:spanCount="3"
-        android:layout_margin="5dp"/>
+        app:spanCount="3" />
+
 </RelativeLayout>

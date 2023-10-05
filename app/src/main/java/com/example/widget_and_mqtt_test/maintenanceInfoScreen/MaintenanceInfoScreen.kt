@@ -5,7 +5,11 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Button
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
@@ -25,11 +29,13 @@ import org.json.JSONObject
 import kotlin.math.log
 
 class MaintenanceInfoScreen : AppCompatActivity(),
-    SharedPreferences.OnSharedPreferenceChangeListener {
+    SharedPreferences.OnSharedPreferenceChangeListener, AdapterView.OnItemSelectedListener {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: MaintenanceInfoScreenLayoutBinding
     lateinit var machinestatusarray: JSONArray
+    lateinit var modalButton: Button
+    lateinit var machineSelectionViewModel: MachineSelectionViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,7 +45,7 @@ class MaintenanceInfoScreen : AppCompatActivity(),
         var myEdit = sharedPreferences.edit()
         var flag = sharedPreferences.contains("machinestatusarray")
         Log.d("shared pref. flags", sharedPreferences.all.toString())
-        var machineSelectionViewModel =
+        machineSelectionViewModel =
             ViewModelProvider(this).get(MachineSelectionViewModel::class.java)
         binding.apply {
 
@@ -66,8 +72,10 @@ class MaintenanceInfoScreen : AppCompatActivity(),
                 layoutInflater.inflate(R.layout.maintenance_info_screen_bottom_modal_layout, null)
             dialog.setContentView(modalView)
             val modalTV = modalView.findViewById<TextView>(R.id.staticTVmislbm)
-            val modalButton = modalView.findViewById<Button>(R.id.acceptButtonmislbm)
-            val modalReasonList = modalView.findViewById<RecyclerView>(R.id.reasonListRV)
+            modalButton = modalView.findViewById<Button>(R.id.acceptButtonmislbm)
+            val modalspinner = modalView.findViewById<Spinner>(R.id.reasonlistspinner)
+//            val modalReasonList = modalView.findViewById<RecyclerView>(R.id.reasonListRV)
+
             val reasonnamelist = listOf<String>(
                 "Reason 1",
                 "Reason 2",
@@ -80,9 +88,16 @@ class MaintenanceInfoScreen : AppCompatActivity(),
                 "Reason 9",
                 "Reason 10"
             )
+            var arrayadapter = ArrayAdapter<String>(
+                this@MaintenanceInfoScreen,
+                R.layout.spinner_item_layout,
+                reasonnamelist
+            )
+            modalspinner.adapter = arrayadapter
+            modalspinner.onItemSelectedListener=this@MaintenanceInfoScreen
             var adapter1 =
                 MaintenanceInfoBottomSheetAdapter(reasonnamelist, machineSelectionViewModel)
-            modalReasonList.adapter = adapter1
+//            modalReasonList.adapter = adapter1
 
             maintenanceInfoScreenCameraScannerFAB.setOnClickListener {
                 val options = GmsBarcodeScannerOptions.Builder()
@@ -103,36 +118,42 @@ class MaintenanceInfoScreen : AppCompatActivity(),
                             JSONObject("{\"line\":\"line5\",\"machine\":\"machine3\",\"status\":\"sent for maintenance\",\"assigned to\":\"\",\"reason\":\"\"}")
                         machineinfo.put("line", jobj.getString("line"))
                         machineinfo.put("machine", jobj.getString("machine name"))
-                        var machineexists=false
-                        var index=-1
-                        var itemstatus=""
-                        for(item in machinestatus){
-                            if((item.getString("line")==machineinfo.getString("line"))&& (item.getString("machine")==machineinfo.getString("machine"))){
+                        var machineexists = false
+                        var index = -1
+                        var itemstatus = ""
+                        for (item in machinestatus) {
+                            if ((item.getString("line") == machineinfo.getString("line")) && (item.getString(
+                                    "machine"
+                                ) == machineinfo.getString("machine"))
+                            ) {
                                 machineexists = true
                                 index = machinestatus.indexOf(item)
                                 itemstatus = item.getString("status")
                                 break
                             }
                         }
-                        if(machineexists){
-                            if(itemstatus=="sent for maintenance"){
-                                machineinfo.put("status","assigned for maintenance")
-                                machineinfo.put("assigned to"," Engineer 1")
+                        if (machineexists) {
+                            if (itemstatus == "sent for maintenance") {
+                                machineinfo.put("status", "assigned for maintenance")
+                                machineinfo.put("assigned to", " Engineer 1")
                                 machinestatus.remove(machinestatus.get(index))
-                                machinestatus.add(index,machineinfo)
+                                machinestatus.add(index, machineinfo)
                                 adapter =
-                                    MachineMaintenanceListAdapter(machinestatus, machineSelectionViewModel)
+                                    MachineMaintenanceListAdapter(
+                                        machinestatus,
+                                        machineSelectionViewModel
+                                    )
                                 maintenanceInfoScreenitemListRV.adapter = adapter
 
                                 if (sharedPreferences.contains("machinestatusarray")) {
                                     myEdit.remove("machinestatusarray").apply()
                                 }
 
-                                myEdit.putString("machinestatusarray", machinestatus.toString()).apply()
-                            }
-                            else if(itemstatus=="assigned for maintenance"){
-                                machineinfo.put("status",itemstatus)
-                                machineinfo.put("assigned to"," Engineer 1")
+                                myEdit.putString("machinestatusarray", machinestatus.toString())
+                                    .apply()
+                            } else if (itemstatus == "assigned for maintenance") {
+                                machineinfo.put("status", itemstatus)
+                                machineinfo.put("assigned to", " Engineer 1")
                                 machineSelectionViewModel.setSelectedMachine(machineinfo)
                                 dialog.show()
                             }
@@ -158,6 +179,7 @@ class MaintenanceInfoScreen : AppCompatActivity(),
             modalButton.setOnClickListener {
                 var selectedmachine = machineSelectionViewModel.getCurrentSelectedMachine()!!
                 if (selectedmachine.getString("status") == "sent for maintenance") {
+                    Log.d("opening camera", "On button ")
                     val options = GmsBarcodeScannerOptions.Builder()
                         .setBarcodeFormats(Barcode.FORMAT_QR_CODE, Barcode.FORMAT_EAN_13).build()
                     val scanner =
@@ -176,8 +198,8 @@ class MaintenanceInfoScreen : AppCompatActivity(),
                                 JSONObject("{\"line\":\"line5\",\"machine\":\"machine3\",\"status\":\"sent for maintenance\",\"assigned to\":\"\",\"reason\":\"\"}")
                             machineinfo.put("line", jobj.getString("line"))
                             machineinfo.put("machine", jobj.getString("machine name"))
-                            machineinfo.put("status" , "assigned for maintenance")
-                            machineinfo.put("assigned to","engineer 1")
+                            machineinfo.put("status", "assigned for maintenance")
+                            machineinfo.put("assigned to", "engineer 1")
                             var index = -1
                             for (item in machinestatus) {
                                 if ((item.getString("line") == jobj.getString("line")) && (item.getString(
@@ -191,7 +213,10 @@ class MaintenanceInfoScreen : AppCompatActivity(),
                             machinestatus.add(index, machineinfo)
 
                             adapter =
-                                MachineMaintenanceListAdapter(machinestatus, machineSelectionViewModel)
+                                MachineMaintenanceListAdapter(
+                                    machinestatus,
+                                    machineSelectionViewModel
+                                )
                             maintenanceInfoScreenitemListRV.adapter = adapter
 
                             if (sharedPreferences.contains("machinestatusarray")) {
@@ -214,8 +239,7 @@ class MaintenanceInfoScreen : AppCompatActivity(),
                     dialog.show()
 
 
-                }
-                else if (selectedmachine.getString("status") == "assigned for maintenance") {
+                } else if (selectedmachine.getString("status") == "assigned for maintenance") {
                     selectedmachine.put("status", "maintenance complete")
                     selectedmachine.put(
                         "reason",
@@ -283,13 +307,13 @@ class MaintenanceInfoScreen : AppCompatActivity(),
                             "machine"
                         )
                     modalButton.text = "ACCEPT"
-                    modalReasonList.isVisible = false
+                    modalspinner.isVisible = false
                 } else if (it.getString("status") == "assigned for maintenance") {
                     modalTV.text =
                         "Select Downtime Reason for: " + it.getString("line") + " -- " + it.getString(
                             "machine"
                         )
-                    modalReasonList.isVisible = true
+                    modalspinner.isVisible = true
                     modalButton.text = "SUBMIT"
                 }
                 dialog.show()
@@ -306,4 +330,21 @@ class MaintenanceInfoScreen : AppCompatActivity(),
         }
 
     }
+
+    override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
+        Log.d("spinner", p0!!.getItemAtPosition(p2).toString() + "\n" + p2)
+
+        var item = p0!!.getItemAtPosition(p2).toString()
+        if (item != "<Select a machine>") {
+            machineSelectionViewModel.setSelectedReason(item)
+            modalButton.isEnabled = true
+        } else {
+            modalButton.isEnabled = false
+        }
+
+}
+
+override fun onNothingSelected(p0: AdapterView<*>?) {
+    TODO("Not yet implemented")
+}
 }
