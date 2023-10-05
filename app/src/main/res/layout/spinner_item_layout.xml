@@ -2,4 +2,13 @@
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
+    android:minHeight="48dp"
+    android:text="hello there"
+    android:gravity="center"
+    android:textSize="20dp"
+    android:textStyle="bold"
+    android:layout_margin="3dp"
+    android:padding="5dp"
+    android:backgroundTint="@color/colorAccent"
+
     />

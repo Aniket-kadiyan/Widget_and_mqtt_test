@@ -4,6 +4,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.Spinner
@@ -26,18 +28,20 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import org.json.JSONArray
 import org.json.JSONObject
 
-class MachineIDSelectionActivity : AppCompatActivity() {
+class MachineIDSelectionActivity : AppCompatActivity(), AdapterView.OnItemSelectedListener {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMachineIdSelectionBinding
     lateinit var linestatusarray: JSONArray
+    lateinit var selectMachineButton : Button
+    lateinit var lineSelectionViewModel: LineSelectionViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         binding = ActivityMachineIdSelectionBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        var lineSelectionViewModel = ViewModelProvider(this).get(LineSelectionViewModel::class.java)
+        lineSelectionViewModel = ViewModelProvider(this).get(LineSelectionViewModel::class.java)
 
         var sharedPreferences = getSharedPreferences("FS", MODE_PRIVATE)
         var myEdit = sharedPreferences.edit()
@@ -68,14 +72,14 @@ class MachineIDSelectionActivity : AppCompatActivity() {
                 val modalView =
                     layoutInflater.inflate(R.layout.select_machine_bottom_panel_modal_layout, null)
                 dialog.setContentView(modalView)
-
                 Log.d("spinner debug", "chk 1")
-                val machineListRV = modalView.findViewById<RecyclerView>(R.id.selectMachineModalRV)
-                val selectMachineButton = modalView.findViewById<Button>(R.id.selectMachineButton)
+//                val machineListRV = modalView.findViewById<RecyclerView>(R.id.selectMachineModalRV)
+                selectMachineButton = modalView.findViewById<Button>(R.id.selectMachineButton)
                 val camerascanner =
                     modalView.findViewById<FloatingActionButton>(R.id.breakdownModalCameraScannerFAB)
                 val machinelistSpinner = modalView.findViewById<Spinner>(R.id.machineListSpinner)
                 val machinenamelist = listOf<String>(
+                    "<Select a machine>",
                     "MACHINE 1",
                     "MACHINE 2",
                     "MACHINE 3",
@@ -90,11 +94,12 @@ class MachineIDSelectionActivity : AppCompatActivity() {
                 var arrayadapter = ArrayAdapter<String>(this@MachineIDSelectionActivity, R.layout.spinner_item_layout, machinenamelist)
                 machinelistSpinner.adapter=arrayadapter
                 Log.d("spinner debug", "chk 2")
-
+                machinelistSpinner.onItemSelectedListener=this@MachineIDSelectionActivity
                 var adapter1 =
                     MachineSelectionModalListAdapter(machinenamelist, lineSelectionViewModel)
-                machineListRV.adapter = adapter1
+//                machineListRV.adapter = adapter1
                 Log.d("spinner debug", "chk 3")
+                selectMachineButton.isEnabled=false
 
                 selectMachineButton.setOnClickListener {
                     var selectedmachinename = lineSelectionViewModel.getCurrentSelectedMachine()
@@ -203,6 +208,22 @@ class MachineIDSelectionActivity : AppCompatActivity() {
             }
 
         }
+    }
+
+    override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
+        Log.d("spinner", p0!!.getItemAtPosition(p2).toString()+"\n"+p2)
+        var item = p0!!.getItemAtPosition(p2).toString()
+        if(item!="<Select a machine>"){
+            lineSelectionViewModel.setSelectedMachine(item)
+            selectMachineButton.isEnabled=true
+        }
+        else{
+            selectMachineButton.isEnabled=false
+        }
+    }
+
+    override fun onNothingSelected(p0: AdapterView<*>?) {
+        selectMachineButton.isEnabled=false
     }
 
 
