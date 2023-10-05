@@ -20,6 +20,8 @@ import com.example.widget_and_mqtt_test.R
 import com.example.widget_and_mqtt_test.databinding.ActivityMachineIdSelectionBinding
 import com.example.widget_and_mqtt_test.databinding.MaintenanceInfoScreenLayoutBinding
 import com.example.widget_and_mqtt_test.machinestatuslist
+import com.google.android.gms.common.moduleinstall.ModuleInstall
+import com.google.android.gms.common.moduleinstall.ModuleInstallRequest
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
@@ -41,6 +43,22 @@ class MaintenanceInfoScreen : AppCompatActivity(),
         super.onCreate(savedInstanceState)
         binding = MaintenanceInfoScreenLayoutBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        val moduleInstall = ModuleInstall.getClient(this)
+        val moduleInstallRequest = ModuleInstallRequest.newBuilder()
+            .addApi(GmsBarcodeScanning.getClient(this))
+            .build()
+        moduleInstall
+            .installModules(moduleInstallRequest)
+            .addOnSuccessListener {
+                if (it.areModulesAlreadyInstalled()) {
+                    // Modules are already installed when the request is sent.
+                }
+            }
+            .addOnFailureListener {
+                // Handle failure…
+            }
+
         var sharedPreferences = getSharedPreferences("FS", MODE_PRIVATE)
         var myEdit = sharedPreferences.edit()
         var flag = sharedPreferences.contains("machinestatusarray")
