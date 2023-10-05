@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:elevation="7dp">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+
+        <TextView
+            android:id="@+id/statictextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentTop="true"
+            android:layout_marginStart="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginBottom="5dp"
+            android:padding="5dp"
+            android:textSize="22dp"
+            android:gravity="center"
+            android:text="Select Machine in Breakdown "
+            android:textStyle="bold" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/selectMachineModalRV"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/statictextView"
+            android:layout_marginStart="5dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginEnd="5dp"
+            android:layout_marginBottom="5dp"
+            android:orientation="horizontal"
+            android:padding="5dp"
+            app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+            app:spanCount="3">
+        </androidx.recyclerview.widget.RecyclerView>
+
+        <Button
+            android:id="@+id/selectMachineButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/machineListSpinner"
+            android:layout_centerHorizontal="true"
+            android:text="submit" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/breakdownModalCameraScannerFAB"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/machineListSpinner"
+            android:layout_alignParentRight="true"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginRight="10dp"
+            android:layout_marginBottom="10dp"
+            android:clickable="true"
+            android:contentDescription="open camera scanner"
+            app:srcCompat="@android:drawable/ic_menu_camera" />
+
+        <Spinner
+            android:id="@+id/machineListSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/selectMachineModalRV"
+            android:elevation="3dp"
+            android:minHeight="50dp" />
+    </RelativeLayout>
+</androidx.cardview.widget.CardView>

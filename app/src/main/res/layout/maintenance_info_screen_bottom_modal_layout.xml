@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:elevation="7dp">
+
+    <TextView
+        android:id="@+id/staticTVmislbm"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:gravity="center"
+        android:textSize="30dp"
+        android:layout_margin="5dp"
+        android:padding="5dp"
+        android:text="Would you like to accept the work on this machine?" />
+
+    <Button
+        android:id="@+id/acceptButtonmislbm"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/reasonListRV"
+        android:layout_centerHorizontal="true"
+        android:layout_margin="10dp"
+        android:layout_marginBottom="50dp"
+        android:padding="5dp"
+        android:textSize="20dp"
+        android:text="Accept" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/reasonListRV"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:foregroundGravity="center"
+        android:layout_centerHorizontal="true"
+        android:layout_below="@id/staticTVmislbm"
+        android:orientation="horizontal"
+        android:padding="5dp"
+        app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+        app:spanCount="3"
+        android:layout_margin="5dp"/>
+</RelativeLayout>
